@@ -1,2 +1,2 @@
 # timelab
-Wordpress Plugin for engines management in fablabs
+Wordpress Plugin for machines management in fablabs

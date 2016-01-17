@@ -19,6 +19,7 @@ class Timelab {
             if (is_admin())
             {
                 require_once('class-timelabAdmin.php');
+                add_action( 'admin_menu', "TimelabAdmin::init");
                 add_action( 'admin_menu', "TimelabAdmin::add_admin_part");
             }
             self::$is_initiated = true;
@@ -41,6 +42,7 @@ class Timelab {
 
     public static function plugin_deactivation()
     {
+
     }
 
     /**
@@ -102,27 +104,28 @@ class Timelab {
         $charset_collate = $wpdb->get_charset_collate();
 
         // names of tables
-        $engineTableName = $wpdb->prefix . "engine";
-        $providerTableName = $wpdb->prefix . "engine_provider";
-        $engineCalendarTableName = $wpdb->prefix . "engine_calendar";
+        $machineTableName = $wpdb->prefix . "machine";
+        $providerTableName = $wpdb->prefix . "machine_provider";
+        $machineCalendarTableName = $wpdb->prefix . "machine_calendar";
 
         // create queries
-        // engine
-        $sqlEngine = "CREATE TABLE $engineTableName (
+        // machine
+        $sqlMachine = "CREATE TABLE $machineTableName (
+                title       varchar(255),
                 id			smallint(10) unsigned auto_increment not null primary key,
 	            code		char(8) not null unique,
-	            description	varchar(255) not null,
+	            description	MEDIUMTEXT,
 	            picture		varchar(255),
-	            id_mark	smallint unsigned not null,
+	            id_mark	    smallint(10) unsigned not null,
 	            serial		varchar(255),
 	            start_date	datetime,
 	            end_date	datetime,
 	            comments	varchar(255),
 	            more_info	varchar(255),
-	            id_type_machine	smallint unsigned not null
+	            id_type_machine	smallint(10) unsigned not null
 	            ) $charset_collate;";
 
-        // engine providers
+        // machine providers
         $sqlMachineProvider = "CREATE TABLE $providerTableName (
                 id			        smallint(10) unsigned auto_increment not null primary key,
 	            short_tag	        varchar(50) not null,
@@ -144,27 +147,27 @@ class Timelab {
 	            contact_sec_mail    varchar(100)
 	            ) $charset_collate;";
 
-        // engine calendar
-        $sqlEngineCalendar = "CREATE TABLE $engineCalendarTableName (
+        // machine calendar
+        $sqlMachineCalendar = "CREATE TABLE $machineCalendarTableName (
                 id			                  smallint(10) unsigned auto_increment not null primary key,
 	            code		                  char(11) not null unique,
-	            id_engine                     smallint(10) unsigned not null,
+	            id_machine                     smallint(10) unsigned not null,
 	            booking_status                smallint(2) unsigned,
 	            booking_recurrence_start_date datetime,
 	            booking_recurrence_end_date   datetime,
 	            booking_recurrence_period     timestamp,
 	            booking_recurrence_duration   timestamp,
 	            booking_comment               varchar(255),
-	            booking_creation_date         datetime NOT NULL DEFAULT NOW(),
+	            booking_creation_date         datetime NOT NULL,
 	            booking_payment_date          datetime,
 	            id_user                       bigint(20) unsigned not null
 	            ) $charset_collate;";
 
         // process queries
         require_once( ABSPATH . 'wp-admin/includes/upgrade.php' );
-        dbDelta( $sqlEngine );
+        dbDelta( $sqlMachine );
         dbDelta( $sqlMachineProvider );
-        dbDelta( $sqlEngineCalendar );
+        dbDelta( $sqlMachineCalendar );
 
         // add the db_version to wordpress
         add_option( self::tml_version_name , TIMELAB_DB_VERSION );
