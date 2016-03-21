@@ -98,10 +98,11 @@ class TimelabAdmin {
 
         include_once( FORM_MANAGER_PATH . "MachineFormMana.php");
 
-        $macMgr = new MachineFormManager($_POST);
+        $macForMgr = new MachineFormManager($_POST);
 
-            // valide l'input
-        $machine = $macMgr->buildMachine();
+            // construit la machine à l'aide du formulaire s'il est rempli
+        // TODO: ... try catch !
+        $machine = $macForMgr->buildMachine();
 
             // si validation ok, effectue la mise à jour et récupère le résultat
 

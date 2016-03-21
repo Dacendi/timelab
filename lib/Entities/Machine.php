@@ -7,8 +7,11 @@
  * Project: timelab
  */
 
-class Machine {
+include_once "WPEntity.php";
 
+class Machine extends WPEntity
+{
+    const machine_table_name = "machine";
 
     /**
      * @var string Title of machine - VARCHAR 255
@@ -67,7 +70,8 @@ class Machine {
 
     public function __construct()
     {
-
+        parent::__construct();
+        $this->tableName = $this->wp_prefix . self::machine_table_name;
     }
 
     /**

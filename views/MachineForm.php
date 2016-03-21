@@ -34,19 +34,26 @@ var_dump($machine);
                         </li>
 
                         <li>
+                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="<?php MachineFormManager::MAC_FOR_SERIAL ?>"><?php _e("Serial number", 'timelab') ?></label>
+                            <input id="<?php echo MachineFormManager::MAC_FOR_SERIAL ?>" name="<?php echo MachineFormManager::MAC_FOR_SERIAL ?>" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="text" placeholder="<?php _e("Type serial number", "timelab") ?>" value="<?php echo $machine->getSerial(); ?>">
+                        </li>
+
+
+                        <li>
                             <br/>
                         </li>
 
                         <li>
-                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="machinepic"><?php _e( "Icon" , 'timelab' ) ?></label>
-                            <input id="machinepic" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="file" name="machinepic">
+                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="<?php echo MachineFormManager::MAC_FOR_PIC ?>"><?php _e( "Icon" , 'timelab' ) ?></label>
+                            <input id="<?php echo MachineFormManager::MAC_FOR_PIC ?>" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="file" name="<?php echo MachineFormManager::MAC_FOR_PIC ?>">
                         </li>
 
                         <li>
                             <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="<?php echo MachineFormManager::MAC_FOR_FIRST_DATE ?>"><?php _e( "Date of machine commissioning" , 'timelab' ) ?><span> </span>:</label>
                             <input id="<?php echo MachineFormManager::MAC_FOR_FIRST_DATE ?>" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="date" name="<?php echo MachineFormManager::MAC_FOR_FIRST_DATE ?>" value="<?php echo $machine->getStartDate() ?>">
-                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="machinelastdate"><?php _e( "Date of machine uncommissioning" , 'timelab' ) ?></label>
-                            <input id="machinelastdate" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="date" name="machinelastdate">
+                            
+                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="<?php echo MachineFormManager::MAC_FOR_LAST_DATE ?>"><?php _e( "Date of machine uncommissioning" , 'timelab' ) ?></label>
+                            <input id="<?php echo MachineFormManager::MAC_FOR_LAST_DATE ?>" form="<?php echo MachineFormManager::MAC_FOR_ID ?>" type="date" name="<?php echo MachineFormManager::MAC_FOR_LAST_DATE ?>" value="<?php echo $machine->getEndDate() ?>">
                         </li>
 
                         <li>
@@ -54,8 +61,16 @@ var_dump($machine);
                         </li>
 
                         <li>
-                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="machinedesc"></label>
-                            <?php wp_editor( null, "machinedesc") ?>
+                            <textarea form="<?php echo MachineFormManager::MAC_FOR_ID ?>" name="<?php echo MachineFormManager::MAC_FOR_COMMENTS ?>" placeholder="<?php _e('Comments', 'timelab') ?>" rows="4" cols="30"><?php echo $machine->getComments() ?></textarea>
+                        </li>
+
+                        <li>
+                            <br/>
+                        </li>
+
+                        <li>
+                            <label form="<?php echo MachineFormManager::MAC_FOR_ID ?>" for="<?php echo MachineFormManager::MAC_FOR_DESC ?>"></label>
+                            <?php wp_editor( $machine->getDescription(), MachineFormManager::MAC_FOR_DESC) ?>
                         </li>
                     </ul>
                     <!-- machine editor -->
