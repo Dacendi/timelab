@@ -33,10 +33,10 @@ class MachineFormManager extends AFormManager {
 
     private function buildMapping($post)
     {
-        if ( ! true )
-            return ;
+        // Transformation steps on $_POST
+        //TODO: sanitize and transform input data
 
-        // map form fields and values associated with $_POST entity properties data
+        // map form fields and values associated with transformed data
         $this->map(self::MAC_FOR_TITLE, "title", $post[self::MAC_FOR_TITLE]);
         $this->map(self::MAC_FOR_COD, "code", $post[self::MAC_FOR_COD]);
         $this->map(self::MAC_FOR_DESC, "description", $post[self::MAC_FOR_DESC]);
@@ -46,29 +46,30 @@ class MachineFormManager extends AFormManager {
         $this->map(self::MAC_FOR_LAST_DATE, "endDate", $post[self::MAC_FOR_LAST_DATE]);
         $this->map(self::MAC_FOR_COMMENTS, "comments", $post[self::MAC_FOR_COMMENTS]);
 
-
-        // add rules for validation
+        // add rules for validation AFTER transformation of data (sanitization, replace...)
+        //TODO: add rules for all fields
+        $this->addRule(self::MAC_FOR_TITLE, 'isset', array(self::INPUT_DATA), true);
         $this->addRule(self::MAC_FOR_TITLE, 'is_string', array(self::INPUT_DATA), true);
-        $this->addRule(self::MAC_FOR_TITLE, 'sanitize_text_field', array(self::INPUT_DATA));
-        $this->addRule(self::MAC_FOR_TITLE, 'preg_replace', array('/[^a-z]/i', "", self::INPUT_DATA));
-        //$this->addRule(self::MAC_FOR_TITLE, 'isset');
-        //TODO: add security rules
+        //$this->addRule(self::MAC_FOR_TITLE, 'sanitize_text_field', array(self::INPUT_DATA));
+        //$this->addRule(self::MAC_FOR_TITLE, 'preg_replace', array('/[^a-z]/i', "", self::INPUT_DATA));
+        //$this->addRule(self::MAC_FOR_COMMENTS, 'strlen', array(self::INPUT_DATA), '>100');
 
-        var_dump($this->mapping);
     }
 
+
     /**
-     *
-     * @return Machine
+     * Try to build a machine with pre-loaded data and build an error array if validation fails
+     * @param $errorArray array the errors when the validation fails
+     * @return Machine Empty Machine if validation fails, loaded Machine elsewhere
      * @throws ReflectionException
      */
-    public function buildMachine()
+    public function buildMachine(array &$errorArray)
     {
         // construct new machine
         $this->objectInstance = new Machine();
 
         // check input
-        if ($this->validate())
+        if ($this->validate($errorArray))
         {
             // load post data into machine instance & return. This instance is used in forms to retrieve data from database or after post submit
             $this->buildObject();

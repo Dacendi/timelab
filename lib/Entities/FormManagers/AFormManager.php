@@ -6,14 +6,27 @@
  * Date: 14/01/16
  */
 
+include_once( FORM_MANAGER_PATH . "FormCheckingException.php");
+
 abstract class AFormManager {
 
     const AF_MGR_MAPPING = "mapping";
     const AF_MGR_FIELD_CHECK = "fieldCheck";
     const AF_MGR_MAPPING_VALUE = "value";
     const AF_MGR_MAPPING_ENT_PROP = "property";
+    const AF_MGR_FIELD_CHECK_NAME = "name";
     const AF_MGR_FIELD_CHECK_EXP = "expected";
     const AF_MGR_FIELD_CHECK_ARGS = "args";
+
+    /**
+     * constants for checking mode
+     * static: alert generated
+     * flow: exclude data
+     */
+    const AF_MGR_FIELD_CHECK_MOD = 'checkingMode';
+    const AF_MGR_FIELD_CHECK_MOD_FLOW = 'flow';
+    const AF_MGR_FIELD_CHECK_MOD_STATIC = 'static';
+
 
     /**
      * used to said that function arg is the data received
@@ -21,6 +34,8 @@ abstract class AFormManager {
     const INPUT_DATA = "AF_MGR_FIELD_CHECK_DATA_TAG";
 
     protected $mapping = [ self::AF_MGR_MAPPING => [], self::AF_MGR_FIELD_CHECK => []];
+
+    private $alerts;
 
     protected $objectInstance;
 
@@ -83,59 +98,114 @@ abstract class AFormManager {
      * @param array $fctArgs optional arguments passed to callable function $fctName
      * @param null $valueExpected In case of function, the value that will be returned for success. Specify cast operation within parenthesis if needed. Function will try that
      */
-    protected function addRule($formId, callable $fctName, array $fctArgs = null, $valueExpected = null)
+    protected function addRule($formId, $fctName, array $fctArgs = null, $valueExpected = null, $checkingMode = AFormManager::AF_MGR_FIELD_CHECK_MOD_FLOW)
     {
+        // check if arg 2 is a string for a callable or isset or empty
+        if(!is_string($fctName) || (! is_callable($fctName) && $fctName != 'isset' && $fctName != 'empty'))
+            throw new BadFunctionCallException("Parameter 2 must be a string defining a callable or isset, empty");
+
+
         //add the rule with assotiated data into a new array under self::AF_MGR_FIELD_CHECK/$formid subtree.
         $this->mapping[self::AF_MGR_FIELD_CHECK][$formId][] = array(
-            $fctName => array(
+                self::AF_MGR_FIELD_CHECK_NAME => $fctName,
                 self::AF_MGR_FIELD_CHECK_ARGS => $fctArgs,
-                self::AF_MGR_FIELD_CHECK_EXP => $valueExpected
-            )
+                self::AF_MGR_FIELD_CHECK_EXP => $valueExpected,
+                self::AF_MGR_FIELD_CHECK_MOD => $checkingMode
         );
     }
 
-
+    /**
+     * Perform rules checking defined with AFormManager::addRule()
+     * @return array list of KO rules-field
+     */
     protected function checkFields()
     {
-        echo "<br/>TODO: debug des règles<br/>";
-        var_dump($this->mapping[self::AF_MGR_FIELD_CHECK]);
+        // define local variables
+        // fail checks array
+        $failedChecks = array();
 
-        // recup data
-        foreach($this->mapping[self::AF_MGR_FIELD_CHECK] as $formId)
+        // read the mapping array with a 3D loop... and try to execute each rules
+        foreach($this->mapping[self::AF_MGR_FIELD_CHECK] as $fieldName => $fieldFormId)
         {
-            foreach($formId as $rulePosition => $rule)
+            foreach($fieldFormId as $rulePosition => $rule)
             {
-                // formId
-                // get function name
-                // get args
-                // get value expected, casted if needed
-                var_dump($rule);
-            }
-        }
-        $this->isValid = true;
-//todo: add security implementation
-    }
+                // replace const self::AF_MGR_FIELD_CHECK_ARGS by data if found
+                foreach ($rule[self::AF_MGR_FIELD_CHECK_ARGS] as $argPos => $argValue)
+                {
+                    if ($argValue == self::INPUT_DATA )
+                        $rule[self::AF_MGR_FIELD_CHECK_ARGS][$argPos] = $this->getMappingValue($fieldName);
+                }// end loop 3
 
-    public function getValidation()
-    {
-        return $this->isValid;
+               // try to run the test
+                try
+                {
+                    // allow use of isset and empty out of call_user_func
+                    if ($rule[self::AF_MGR_FIELD_CHECK_NAME]=='isset')
+                        $result = isset($rule[self::AF_MGR_FIELD_CHECK_ARGS][0]);
+                    elseif ($rule[self::AF_MGR_FIELD_CHECK_NAME]=='empty')
+                        $result = empty($rule[self::AF_MGR_FIELD_CHECK_ARGS][0]);
+                    else
+                        $result = call_user_func_array($rule[self::AF_MGR_FIELD_CHECK_NAME], $rule[self::AF_MGR_FIELD_CHECK_ARGS]);
+
+                    // try to cast de result type to
+                    if ((gettype($result) == gettype($rule[self::AF_MGR_FIELD_CHECK_EXP]) ) && $result != $rule[self::AF_MGR_FIELD_CHECK_EXP])
+                    {
+                        $exp = new FormCheckingException("Error when trying to check the rule \"".$rule[self::AF_MGR_FIELD_CHECK_NAME]. "\" on field \"". $fieldName.'". Expected: '. (string) $rule[self::AF_MGR_FIELD_CHECK_EXP] . " got :". (string) $result, -1);
+                        throw $exp;
+                    }
+
+                }
+                catch (Exception $e)
+                {
+                    // store rule exception and go to next
+                    $failedChecks[] = $e;
+                }
+
+            }// end loop 2
+        }//end loop 1
+
+        // returns an array of all caught exceptions
+        return $failedChecks;
     }
 
     /**
-     * Perform validation calling methods for
-     * @return bool validation status
+     * Retrieve the loaded data
+     * @param string $fieldFormId form identifier
+     * @return mixed value loaded
      */
-    public function validate()
+    protected function getMappingValue($fieldFormId)
     {
-        try {
-            $this->checkFields();
-        }
-        catch (Exception $e)
-        {
-            $this->isValid = false;
-            echo $e->getCode() . " " . $e->getMessage();
-        }
-        return $this->getValidation();
+        return $this->mapping[self::AF_MGR_MAPPING][$fieldFormId][self::AF_MGR_MAPPING_VALUE];
+    }
+
+
+
+    public function validate(&$errorTable = null)
+    {
+        // do checkings if form is not valid and complete error array if not valid
+        $this->performValidation();
+        if (isset($errorTable))
+            $errorTable = $this->alerts;
+        return $this->isValid;
+    }
+
+
+    /**
+     * perform validation and load assiated properties: $alert and $isValid
+     */
+    private function performValidation()
+    {
+        // perform validation and catch errors in alert property
+        $this->alerts = $this->checkFields();
+        $this->isValid = empty($this->alerts); // if alerts is empty: it's OK !
+    }
+
+    /**
+     * @return array $alerts Array of Exceptions generated during checking step
+     */
+    public function getAlerts()
+    {
+        return $this->alerts;
     }
 
 }

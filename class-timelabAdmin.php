@@ -101,8 +101,11 @@ class TimelabAdmin {
         $macForMgr = new MachineFormManager($_POST);
 
             // construit la machine à l'aide du formulaire s'il est rempli
-        // TODO: ... try catch !
-        $machine = $macForMgr->buildMachine();
+
+        $validationErrors = array();
+        $machine = $macForMgr->buildMachine($validationErrors);
+
+        var_dump($validationErrors);
 
             // si validation ok, effectue la mise à jour et récupère le résultat
 
